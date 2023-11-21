@@ -46,8 +46,17 @@ def epsilon_greedy(state_vector, theta, epsilon):
         (int, int): the indices describing the action/object to take
     """
     # TODO Your code here
-    action_index, object_index = None, None
-    return (action_index, object_index)
+    random_choice = np.random.random_sample()
+    if random_choice < epsilon:
+        action_index = np.random.randint(NUM_ACTIONS)
+        object_index = np.random.randint(NUM_OBJECTS)
+    else:
+        q_values = (theta @ state_vector)
+        index = np.argmax(q_values)
+        action_index, object_index = index2tuple(index)
+    return action_index, object_index
+
+
 # pragma: coderesponse end
 
 
@@ -69,7 +78,18 @@ def linear_q_learning(theta, current_state_vector, action_index, object_index,
         None
     """
     # TODO Your code here
-    theta = None # TODO Your update here
+    q_values_next = theta @ next_state_vector
+    maxq_next = np.max(q_values_next)
+
+    q_values = theta @ current_state_vector
+    cur_index = tuple2index(action_index, object_index)
+    q_value_cur = q_values[cur_index]
+
+    target = reward + GAMMA * maxq_next * (1 - terminal)
+
+    theta[cur_index] = theta[cur_index] + ALPHA * (
+            target - q_value_cur) * current_state_vector
+
 # pragma: coderesponse end
 
 
@@ -85,10 +105,11 @@ def run_episode(for_training):
         None
     """
     epsilon = TRAINING_EP if for_training else TESTING_EP
-    epi_reward = None
+    epi_reward = 0
 
     # initialize for each episode
     # TODO Your code here
+    gamma_step = 1
 
     (current_room_desc, current_quest_desc, terminal) = framework.newGame()
     while not terminal:
@@ -97,19 +118,34 @@ def run_episode(for_training):
         current_state_vector = utils.extract_bow_feature_vector(
             current_state, dictionary)
         # TODO Your code here
+        action_index, object_index = \
+            epsilon_greedy(state_vector=current_state_vector, theta=theta, epsilon=epsilon)
+
+        next_room_desc, next_quest_desc, reward, terminal = \
+            framework.step_game(current_room_desc=current_room_desc,
+                                current_quest_desc=current_quest_desc,
+                                action_index=action_index, object_index=object_index)
 
         if for_training:
             # update Q-function.
             # TODO Your code here
-            pass
+            next_state = next_room_desc + next_quest_desc
+            next_state_vector = utils.extract_bow_feature_vector(
+                next_state, dictionary)
+
+            linear_q_learning(theta, current_state_vector, action_index, object_index,
+                              reward, next_state_vector, terminal)
 
         if not for_training:
             # update reward
             # TODO Your code here
-            pass
+            epi_reward += gamma_step * reward
+            gamma_step *= GAMMA
 
         # prepare next step
         # TODO Your code here
+        current_quest_desc = next_quest_desc
+        current_room_desc = next_room_desc
 
     if not for_training:
         return epi_reward
@@ -145,7 +181,7 @@ def run():
 
 
 if __name__ == '__main__':
-    state_texts = utils.load_data('game.tsv')
+    state_texts = utils.load_data('C:\\Users\\vasts\\Documents\\MIT\\MIT Statistics and Data Science\\mit686sup\\5\\resources_rl\\rl\\game.tsv')
     dictionary = utils.bag_of_words(state_texts)
     state_dim = len(dictionary)
     action_dim = NUM_ACTIONS * NUM_OBJECTS
