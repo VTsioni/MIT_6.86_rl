@@ -75,9 +75,8 @@ def tabular_q_learning(q_func, current_state_1, current_state_2, action_index,
 
     q_value = q_func[current_state_1, current_state_2, action_index,
                      object_index]
-    q_func[current_state_1, current_state_2, action_index, object_index] = (
-                                                                                   1 - ALPHA) * q_value + ALPHA * (
-                                                                                       reward + GAMMA * maxq_next_state)
+    q_func[current_state_1, current_state_2, action_index, object_index] = \
+        (1 - ALPHA) * q_value + ALPHA * (reward + GAMMA * maxq_next_state)
 
     return None  # This function shouldn't return anything
 
