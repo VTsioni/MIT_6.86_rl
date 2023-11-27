@@ -41,8 +41,15 @@ def epsilon_greedy(state_vector, epsilon):
         (int, int): the indices describing the action/object to take
     """
     # TODO Your code here
-    action_index, object_index = None, None
-    return (action_index, object_index)
+    random_choice = np.random.random_sample()
+    if random_choice < epsilon:
+        action_index = np.random.randint(NUM_ACTIONS)
+        object_index = np.random.randint(NUM_OBJECTS)
+    else:
+        q_values = (theta @ state_vector)
+        index = np.argmax(q_values)
+        action_index, object_index = index2tuple(index)
+    return action_index, object_index
 
 class DQN(nn.Module):
     """A simple deep Q network implementation.
