@@ -102,7 +102,6 @@ def run_episode(for_training):
     gamma_step = 1
     # initialize for each episode
     # TODO Your code here
-
     (current_room_desc, current_quest_desc, terminal) = framework.newGame()
     while not terminal:
         current_room_index = dict_room_desc[current_room_desc]
@@ -168,7 +167,7 @@ def run():
     q_func = np.zeros((NUM_ROOM_DESC, NUM_QUESTS, NUM_ACTIONS, NUM_OBJECTS))
 
     single_run_epoch_rewards_test = []
-    pbar = tqdm(range(NUM_EPOCHS), ncols=80)
+    pbar = tqdm(range(NUM_EPOCHS), ncols=100)
     for _ in pbar:
         single_run_epoch_rewards_test.append(run_epoch())
         pbar.set_description(

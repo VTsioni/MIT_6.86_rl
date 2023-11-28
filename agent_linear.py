@@ -11,11 +11,11 @@ DEBUG = False
 GAMMA = 0.5  # discounted factor
 TRAINING_EP = 0.5  # epsilon-greedy parameter for training
 TESTING_EP = 0.05  # epsilon-greedy parameter for testing
-NUM_RUNS = 10
+NUM_RUNS = 5
 NUM_EPOCHS = 600
 NUM_EPIS_TRAIN = 25  # number of episodes for training at each epoch
 NUM_EPIS_TEST = 50  # number of episodes for testing
-ALPHA = 0.001  # learning rate for training
+ALPHA = 0.01  # learning rate for training
 
 ACTIONS = framework.get_actions()
 OBJECTS = framework.get_objects()
@@ -126,13 +126,13 @@ def run_episode(for_training):
                                 current_quest_desc=current_quest_desc,
                                 action_index=action_index, object_index=object_index)
 
+        next_state = next_room_desc + next_quest_desc
+        next_state_vector = utils.extract_bow_feature_vector(
+            next_state, dictionary)
+
         if for_training:
             # update Q-function.
             # TODO Your code here
-            next_state = next_room_desc + next_quest_desc
-            next_state_vector = utils.extract_bow_feature_vector(
-                next_state, dictionary)
-
             linear_q_learning(theta, current_state_vector, action_index, object_index,
                               reward, next_state_vector, terminal)
 
@@ -204,4 +204,9 @@ if __name__ == '__main__':
     axis.set_ylabel('reward')
     axis.set_title(('Linear: nRuns=%d, Epilon=%.2f, Epi=%d, alpha=%.4f' %
                     (NUM_RUNS, TRAINING_EP, NUM_EPIS_TRAIN, ALPHA)))
+
+    # print average reward after convergence at about 100 epochs
+    print(np.mean(np.mean(epoch_rewards_test, axis=0)[80:]))  # print average reward after convergence at about 80 epochs
+    print(np.mean(np.mean(epoch_rewards_test, axis=0)[100:]))  # print average reward after convergence at about 100 epochs
+    print(np.mean(np.mean(epoch_rewards_test, axis=0)[120:]))  # print average reward after convergence at about 120 epochs
 

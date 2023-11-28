@@ -46,9 +46,10 @@ def epsilon_greedy(state_vector, epsilon):
         action_index = np.random.randint(NUM_ACTIONS)
         object_index = np.random.randint(NUM_OBJECTS)
     else:
-        q_values = (theta @ state_vector)
-        index = np.argmax(q_values)
-        action_index, object_index = index2tuple(index)
+        q_values_action, q_values_object = model(state_vector)
+        _, action_index = q_values_action.max(0)
+        _, object_index = q_values_object.max(0)
+
     return action_index, object_index
 
 class DQN(nn.Module):
@@ -90,9 +91,16 @@ def deep_q_learning(current_state_vector, action_index, object_index, reward,
 
     q_value_cur_state = model(current_state_vector)
 
-    # TODO Your code here
+    current_Q = 1 / 2 * (q_value_cur_state[0][action_index] +
+                         q_value_cur_state[1][object_index])
 
-    loss = None
+    # TODO Your code here
+    if not terminal:
+        y = torch.as_tensor(float(reward) + (GAMMA * maxq_next))
+    else:
+        y = torch.as_tensor(float(reward))
+
+    loss = F.mse_loss(current_Q, y)
 
     optimizer.zero_grad()
     loss.backward()
@@ -107,32 +115,54 @@ def run_episode(for_training):
         If for testing, computes and return cumulative discounted reward
     """
     epsilon = TRAINING_EP if for_training else TESTING_EP
-    epi_reward = None
+    epi_reward = 0
 
     # initialize for each episode
     # TODO Your code here
+    gamma_step = 1
 
     (current_room_desc, current_quest_desc, terminal) = framework.newGame()
     while not terminal:
         # Choose next action and execute
         current_state = current_room_desc + current_quest_desc
         current_state_vector = torch.FloatTensor(
-            utils.extract_bow_feature_vector(current_state, dictionary))
+            utils.extract_bow_feature_vector(current_state, dictionary)
+        )
 
         # TODO Your code here
+        action_index, object_index = epsilon_greedy(
+            state_vector=current_state_vector,
+            epsilon=epsilon
+        )
+
+        next_room_desc, next_quest_desc, reward, terminal = \
+            framework.step_game(current_room_desc=current_room_desc,
+                                current_quest_desc=current_quest_desc,
+                                action_index=action_index, object_index=object_index)
+
+        next_state = next_room_desc + next_quest_desc
+        next_state_vector =  torch.FloatTensor(
+            utils.extract_bow_feature_vector(next_state, dictionary)
+        )
 
         if for_training:
             # update Q-function.
             # TODO Your code here
-            pass
+            deep_q_learning(current_state_vector=current_state_vector,
+                            action_index=action_index, object_index=object_index,
+                            reward=reward, next_state_vector=next_state_vector,
+                            terminal=terminal)
 
         if not for_training:
             # update reward
             # TODO Your code here
-            pass
+            epi_reward += gamma_step * reward
+            gamma_step *= GAMMA
 
         # prepare next step
         # TODO Your code here
+        current_quest_desc = next_quest_desc
+        current_room_desc = next_room_desc
 
     if not for_training:
         return epi_reward
@@ -170,7 +200,7 @@ def run():
 
 
 if __name__ == '__main__':
-    state_texts = utils.load_data('game.tsv')
+    state_texts = utils.load_data('C:\\Users\\vasts\\Documents\\MIT\\MIT Statistics and Data Science\\mit686sup\\5\\resources_rl\\rl\\game.tsv')
     dictionary = utils.bag_of_words(state_texts)
     state_dim = len(dictionary)
 
